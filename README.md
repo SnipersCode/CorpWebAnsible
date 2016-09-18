@@ -1,5 +1,12 @@
 # CorpWeb Deployment
 
+## Clone the repo
+
+You'll obviously need to clone this repo in order to use it.
+```bash
+git clone https://github.com/SnipersCode/CorpWebAnsible
+```
+
 ## Setup Ansible
 
 You can either read through the directions [at the ansible docs](http://docs.ansible.com/ansible/intro_installation.html) or complete the following.
@@ -20,6 +27,8 @@ sudo ./install.sh
 ```
 
 ### Passwordless Sudo
+
+If you are not using root as the installation user over ssh, you will need to set up passwordless sudo
 
 Because Ansible requires passwordless sudo, you'll need to run the [following commands](http://stackoverflow.com/questions/21870083/specify-sudo-password-for-ansible) on the target machine (through ssh or directly)
 ```
@@ -53,10 +62,16 @@ alpha.tritaniumindustries.com
 
 ## Run Ansible
 
+If you are connecting as someone other than root
 ```
-ansible-playbook -i hosts install.yml -s -K
+ansible-playbook -i hosts -u YourUserName install.yml -s -K
 (put admin password when asked)
 ```
+Otherwise
+```
+ansible-playbook -i hosts -u root install.yml
+```
+
 
 ## Known Bugs
 [Docker-py version is checked incorrectly](https://github.com/ansible/ansible/issues/17495)

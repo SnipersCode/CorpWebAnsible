@@ -4,6 +4,13 @@
   hosts: CorpWeb
   vars_files:
     - config.yml
+  gather_facts: no
+  pre_tasks:
+    - name: Ensure Python 2 is installed
+      raw: sudo apt-get update
+      raw: sudo apt-get -y install python-simplejson
+    - name: Gather Facts
+      setup:
   roles:
     - role: install
     - role: angstwad.docker_ubuntu
