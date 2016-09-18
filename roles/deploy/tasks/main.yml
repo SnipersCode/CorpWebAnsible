@@ -1,0 +1,138 @@
+---
+
+- name: Clone CorpWeb
+  git:
+    repo: https://github.com/SnipersCode/CorpWeb.git
+    dest: /services/CorpWeb
+    force: yes
+
+- name: Replace CorpWeb Config
+  template:
+    src: config.js.j2
+    dest: /services/CorpWeb/src/config.js
+
+- name: Clean default nginx confs
+  file:
+    path: /services/CorpWeb/nginx
+    state: absent
+  file:
+    path: /services/CorpWeb/nginx
+    state: directory
+
+- name: Add nginx conf
+  template:
+    src: nginx.conf.j2
+    dest: /services/CorpWeb/nginx/{{ DEFAULT_HOST }}.conf
+
+- name: Prepare certificates directory
+  file:
+    path: /services/certificates
+    state: directory
+
+- name: Clone CorpWebAPI
+  git:
+    repo: https://github.com/SnipersCode/CorpWebAPI.git
+    dest: /services/CorpWebAPI
+    force: yes
+
+- name: Add ENV
+  template:
+    src: api.env.j2
+    dest: /services/CorpWebAPI/env
+
+- name: Ensure CorpWeb API container does not exist
+  docker_container:
+    name: corpweb-api
+    state: absent
+    keep_volumes: False
+
+- name: Ensure CorpWeb container does not exist
+  docker_container:
+    name: corpweb-dashboard
+    state: absent
+    keep_volumes: False
+
+- name: Ensure old CorpWeb image does not exist
+  docker_image:
+    name: corpweb
+    state: absent
+
+- name: Ensure old CorpWeb API image does not exist
+  docker_image:
+    name: corpweb-api
+    state: absent
+
+- name: Build CorpWeb Image
+  docker_image:
+    name: corpweb
+    state: present
+    path: /services/CorpWeb
+    pull: False
+
+- name: Build CorpWebAPI Image
+  docker_image:
+    name: corpweb-api
+    state: present
+    path: /services/CorpWebAPI
+    pull: False
+
+- name: Start CorpWeb Container
+  docker_container:
+    name: corpweb-dashboard
+    image: corpweb
+    state: started
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "/usr/share/nginx/html"
+      - "/etc/nginx/vhost.d"
+      - "/services/certificates:/etc/nginx/certs:ro"
+    env:
+      DEFAULT_HOST: "{{ DEFAULT_HOST }}"
+
+- name: Wait for Nginx
+  uri:
+    url: http://127.0.0.1
+  register: nginx_wait
+  until: nginx_wait.status == 200
+  retries: 12
+  delay: 5
+  ignore_errors: true
+
+- name: Start Rethinkdb Container
+  docker_container:
+    name: corpweb-db
+    image: rethinkdb
+    state: started
+    ports:
+      - "127.0.0.1:8080:8080"
+
+- name: Wait for Rethinkdb web admin
+  uri:
+    url: http://127.0.0.1:8080
+  register: rethinkdb_wait
+  until: rethinkdb_wait.status == 200
+  retries: 12
+  delay: 5
+  ignore_errors: true
+
+- name: Start CorpWebAPI Container
+  docker_container:
+    name: corpweb-api
+    image: corpweb-api
+    state: started
+    links:
+      - "corpweb-db:db"
+    env_file: /services/CorpWebAPI/env
+
+- name: Wait for CorpWeb API
+  uri:
+    url: http://{{ API_VIRTUAL_HOST }}
+  register: corpwebapi_wait
+  until: corpwebapi_wait.status == 200
+  retries: 12
+  delay: 5
+  ignore_errors: true
+  tags:
+    - wait

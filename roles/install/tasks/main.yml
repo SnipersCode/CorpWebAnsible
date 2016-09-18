@@ -1,0 +1,4 @@
+---
+
+- name: Install Galaxy Dependencies
+  local_action: command ansible-galaxy install -r requirements.yml --ignore-errors
