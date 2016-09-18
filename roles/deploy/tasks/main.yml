@@ -1,5 +1,28 @@
 ---
 
+- name: Check Swapfile
+  stat:
+    path: /services/temp/swapfile
+  register: swapfile_check
+
+- name: Create Swapfile (if doesn't exist)
+  shell: fallocate -l 2G /services/temp/swapfile
+  when: swapfile_check.stat.exists == False
+
+- name: Protect Swapfile (if doesn't exist)
+  file:
+    path: /services/temp/swapfile
+    mode: 0600
+  when: swapfile_check.stat.exists == False
+
+- name: Transform Swapfile (if doesn't exist)
+  shell: mkswap /services/temp/swapfile
+  when: swapfile_check.stat.exists == False
+
+- name: Activate Swapfile (if doesn't exist)
+  shell: swapon /services/temp/swapfile
+  when: swapfile_check.stat.exists == False
+
 - name: Clone CorpWeb
   git:
     repo: https://github.com/SnipersCode/CorpWeb.git
@@ -15,6 +38,8 @@
   file:
     path: /services/CorpWeb/nginx
     state: absent
+
+- name: Put back directory
   file:
     path: /services/CorpWeb/nginx
     state: directory
@@ -23,6 +48,69 @@
   template:
     src: nginx.conf.j2
     dest: /services/CorpWeb/nginx/{{ DEFAULT_HOST }}.conf
+
+- name: Create working directory
+  file:
+    path: /services/temp
+    state: directory
+
+- name: Download node
+  get_url:
+    url: https://deb.nodesource.com/setup_4.x
+    dest: /services/temp/setup_node.sh
+    mode: 0755
+
+- name: Setup node
+  shell: /services/temp/setup_node.sh
+
+- name: Install node
+  apt:
+    name: nodejs
+    state: present
+
+- name: Install node packages dependency
+  apt:
+    name: build-essential
+    update_cache: yes
+    state: present
+
+- name: Ensure update to npm 3
+  npm:
+    name: npm@3
+    global: yes
+    state: present
+
+- name: Install aurelia cli globally using npm
+  npm:
+    name: aurelia-cli
+    global: yes
+    state: present
+
+- name: Install all packages except optional
+  shell: npm install --no-optional
+  args:
+    chdir: /services/CorpWeb/
+  ignore_errors: yes
+
+- name: Run aurelia-materialize-bridge script
+  shell: ./node_modules/.bin/r.js -o rbuild.js
+  args:
+    chdir: /services/CorpWeb
+
+- name: Install aurelia-materialize-bridge
+  shell: npm install aurelia-materialize-bridge
+  args:
+    chdir: /services/CorpWeb/
+
+- name: Install aurelia-validation
+  shell: npm install aurelia-validation
+  args:
+    chdir: /services/CorpWeb/
+
+- name: Bundle CorpWeb
+  shell: au build --env prod
+  args:
+    chdir: /services/CorpWeb
 
 - name: Prepare certificates directory
   file:
