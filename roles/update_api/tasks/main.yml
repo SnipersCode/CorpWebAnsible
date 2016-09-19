@@ -1,0 +1,12 @@
+---
+
+- name: Clone CorpWebAPI
+  git:
+    repo: https://github.com/SnipersCode/CorpWebAPI.git
+    dest: /services/CorpWebAPI
+    force: yes
+
+- name: Add ENV
+  template:
+    src: api.env.j2
+    dest: /services/CorpWebAPI/env

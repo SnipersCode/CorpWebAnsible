@@ -16,4 +16,7 @@
     - role: install
     - role: angstwad.docker_ubuntu
       pip_version_docker_py: 1.9.0
+    - role: update_dashboard
+    - role: update_api
     - role: deploy
+    - role: up_containers

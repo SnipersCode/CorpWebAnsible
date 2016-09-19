@@ -1,0 +1,10 @@
+---
+
+- name: Ansible Update
+  hosts: CorpWeb
+  vars_files:
+    - config.yml
+  roles:
+    - role: update_dashboard
+    - role: update_api
+    - role: up_containers

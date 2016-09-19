@@ -2,3 +2,32 @@
 
 - name: Install Galaxy Dependencies
   local_action: command ansible-galaxy install -r requirements.yml --ignore-errors
+
+- name: Create working directory
+  file:
+    path: /services/temp
+    state: directory
+    recurse: yes
+
+- name: Check Swapfile
+  stat:
+    path: /services/temp/swapfile
+  register: swapfile_check
+
+- name: Create Swapfile (if doesn't exist)
+  shell: fallocate -l 2G /services/temp/swapfile
+  when: swapfile_check.stat.exists == False
+
+- name: Protect Swapfile (if doesn't exist)
+  file:
+    path: /services/temp/swapfile
+    mode: 0600
+  when: swapfile_check.stat.exists == False
+
+- name: Transform Swapfile (if doesn't exist)
+  shell: mkswap /services/temp/swapfile
+  when: swapfile_check.stat.exists == False
+
+- name: Activate Swapfile (if doesn't exist)
+  shell: swapon /services/temp/swapfile
+  when: swapfile_check.stat.exists == False
