@@ -21,6 +21,21 @@
     path: /services/CorpWeb/nginx
     state: directory
 
+- name: Clean old app-bundle
+  file:
+    path: /services/CorpWeb/scripts/app-bundle.js
+    state: absent
+
+- name: Clean old app-bundle map
+  file:
+    path: /services/CorpWeb/scripts/app-bundle.js.map
+    state: absent
+
+- name: Clean old vendor-bundle
+  file:
+    path: /services/CorpWeb/scripts/vendor-bundle.js
+    state: absent
+
 - name: Add nginx conf
   template:
     src: nginx.conf.j2
