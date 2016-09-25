@@ -53,6 +53,7 @@
     state: started
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - "/var/run/docker.sock:/tmp/docker.sock:ro"
       - "/usr/share/nginx/html"
@@ -60,6 +61,31 @@
       - "/services/certificates:/etc/nginx/certs:ro"
     env:
       DEFAULT_HOST: "{{ DEFAULT_HOST }}"
+
+- name: Start LetsEncrypt Certificate Handler Container
+  docker_container:
+    name: corpweb-ssl
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    state: started
+    volumes:
+      - "/services/certificates:/etc/nginx/certs:rw"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    volumes_from:
+      - corpweb-dashboard
+    env:
+      ACME_CA_URI: "https://acme-staging.api.letsencrypt.org/directory"
+
+- name: Create default cert symlink
+  file:
+    src: /services/certificates/{{ DEFAULT_HOST }}/fullchain.pem
+    dest: /services/certificates/default.crt
+    state: link
+
+- name: Create default key symlink
+  file:
+    src: /services/certificates/{{ DEFAULT_HOST }}/key.pem
+    dest: /services/certificates/default.key
+    state: link
 
 - name: Wait for Nginx
   uri:
@@ -77,6 +103,7 @@
     state: started
     ports:
       - "127.0.0.1:8080:8080"
+      - "127.0.0.1:28015:28015"
 
 - name: Wait for Rethinkdb web admin
   uri:

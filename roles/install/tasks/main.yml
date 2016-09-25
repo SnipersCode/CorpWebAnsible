@@ -9,6 +9,22 @@
     state: directory
     recurse: yes
 
+- name: RethinkDB tools install (Add apt repo)
+  raw: source /etc/lsb-release && echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list
+
+- name: Rethinkdb tools install (Download gpg key)
+  raw: wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
+
+- name: RethinkDB tools install (apt)
+  apt:
+    name: rethinkdb
+    update_cache: yes
+    state: present
+
+- name: Install rethinkdb python driver
+  pip:
+    name: rethinkdb
+
 - name: Check Swapfile
   stat:
     path: /services/temp/swapfile

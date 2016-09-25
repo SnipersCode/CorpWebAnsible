@@ -35,8 +35,3 @@
   file:
     path: /services/CorpWeb/scripts/vendor-bundle.js
     state: absent
-
-- name: Add nginx conf
-  template:
-    src: nginx.conf.j2
-    dest: /services/CorpWeb/nginx/{{ DEFAULT_HOST }}.conf
