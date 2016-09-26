@@ -10,9 +10,22 @@
     path: /services/certificates
     state: directory
 
+- name: Stop LetEncrypt Certificate Handler Container
+  docker_container:
+    name: corpweb-ssl
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    state: stopped
+    keep_volumes: True
+
 - name: Ensure CorpWeb container does not exist
   docker_container:
     name: corpweb-dashboard
+    state: absent
+    keep_volumes: False
+
+- name: Ensure CorpWeb API container does not exist
+  docker_container:
+    name: corpweb-api
     state: absent
     keep_volumes: False
 
@@ -27,12 +40,6 @@
     state: present
     path: /services/CorpWeb
     pull: False
-
-- name: Ensure CorpWeb API container does not exist
-  docker_container:
-    name: corpweb-api
-    state: absent
-    keep_volumes: False
 
 - name: Ensure old CorpWeb API image does not exist
   docker_image:
@@ -77,15 +84,17 @@
 
 - name: Create default cert symlink
   file:
-    src: /services/certificates/{{ DEFAULT_HOST }}/fullchain.pem
+    src: ./{{ DEFAULT_HOST }}/fullchain.pem
     dest: /services/certificates/default.crt
     state: link
+    force: yes
 
 - name: Create default key symlink
   file:
-    src: /services/certificates/{{ DEFAULT_HOST }}/key.pem
+    src: ./{{ DEFAULT_HOST }}/key.pem
     dest: /services/certificates/default.key
     state: link
+    force: yes
 
 - name: Wait for Nginx
   uri:
