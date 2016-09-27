@@ -99,6 +99,7 @@
 - name: Wait for Nginx
   uri:
     url: http://127.0.0.1
+    validate_certs: no
   register: nginx_wait
   until: nginx_wait.status == 200
   retries: 12
@@ -135,6 +136,7 @@
 - name: Wait for CorpWeb API
   uri:
     url: http://{{ API_VIRTUAL_HOST }}
+    validate_certs: no
   register: corpwebapi_wait
   until: corpwebapi_wait.status == 200
   retries: 12
