@@ -80,7 +80,7 @@
     volumes_from:
       - corpweb-dashboard
     env:
-      ACME_CA_URI: "{{ (SSL_TEST == 'True') | ternary('https://acme-staging.api.letsencrypt.org/directory', 'https://acme-v01.api.letsencrypt.org/directory') }}"
+      ACME_CA_URI: "{{ SSL_TEST | ternary('https://acme-staging.api.letsencrypt.org/directory', 'https://acme-v01.api.letsencrypt.org/directory') }}"
 
 - name: Create default cert symlink
   file:
